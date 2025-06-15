@@ -11,13 +11,18 @@ async function bootstrap() {
   const port = configService.get<number>('PORT') || 3000;
 
   const config = new DocumentBuilder()
-    .setTitle('NestJS Auth & Roles')
-    .setDescription('Authentication for users and user roles to manage RBAC (Role Based Access Control)')
+    .setTitle('ElektroPanel API')
+    .setDescription('API documentation for ElektroPanel')
     .setVersion('1.0')
-    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'Bearer token')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'Bearer token',
+    )
+    .addServer('/api') // 👈 Key change: Set base path to /api
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, documentFactory);
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('v2', app, document);
 
   app.enableCors({
     origin: [
