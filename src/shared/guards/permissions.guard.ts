@@ -12,7 +12,7 @@ export class PermissionsGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions = this.reflector.get<(string | string[])[]>('permissions', context.getHandler());
-    if (!requiredPermissions) {
+    if (!requiredPermissions || requiredPermissions.length === 0) {
       return true;
     }
   
@@ -23,42 +23,53 @@ export class PermissionsGuard implements CanActivate {
       throw new UnauthorizedException('User is not authenticated.');
     }
 
-    //const userPermissions = await this.usersService.getUserPermissions(userId); Use this if you want to fetch them from the database
     const userPermissions: PermissionDTO[] = request.user?.permissions; 
-
     if (!userPermissions) {
       throw new UnauthorizedException('User permissions not found');
     }
 
-    const userPermissionSet = new Set(userPermissions.map(permission => permission.name.toUpperCase()));
+    // Normalize user permissions to uppercase
+    const userPermissionSet = new Set(
+      userPermissions.map(p => p.name.toUpperCase())
+    );
 
+    // Check if user is admin
+    const isAdmin = userPermissionSet.has('ADMIN');
+
+    // If user is admin, grant access immediately
+    if (isAdmin) {
+      return true;
+    }
+
+    // Check required permissions
     const hasPermission = (permissions: (string | string[])[]) => {
-      return permissions.every(permission =>
+      return permissions.some(permission =>
         Array.isArray(permission)
-          ? permission.some(p => this.matchesPermission(p, userPermissionSet))
-          : this.matchesPermission(permission, userPermissionSet)
+          ? permission.every(p => this.checkPermission(p, userPermissionSet)) // Tutti i permessi nel gruppo devono essere soddisfatti
+          : this.checkPermission(permission, userPermissionSet) // Permesso singolo
       );
     };
 
-    const permissionCheck = hasPermission(requiredPermissions);
-
-    if (!permissionCheck) {
+    if (!hasPermission) {
       throw new ForbiddenException('You do not have permission to access this resource');
     }
+
 
     return true;
   }
 
-  private matchesPermission(permission: string, userPermissions: Set<string>): boolean {
-    const normalizedPermission = permission.toUpperCase();
-
-    if (normalizedPermission.includes('*')) {
-      const regex = new RegExp(`^${normalizedPermission.replace(/\*/g, '.*')}$`);
-      return Array.from(userPermissions).some(userPermission => regex.test(userPermission));
+  private checkPermission(permission: string, userPermissions: Set<string>): boolean {
+    // Exact match
+    if (userPermissions.has(permission)) {
+      return true;
     }
 
-    return Array.from(userPermissions).some(userPermission => 
-      userPermission.localeCompare(normalizedPermission, undefined, { sensitivity: 'base' }) === 0
-    );
+    // Wildcard matching
+    if (permission.includes('*')) {
+      const regex = new RegExp(`^${permission.replace(/\*/g, '.*')}$`);
+      return Array.from(userPermissions).some(userPerm => regex.test(userPerm));
+    }
+
+    return false;
   }
 }
