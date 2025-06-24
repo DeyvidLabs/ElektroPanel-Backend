@@ -11,7 +11,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 export class ProxmoxController {
   constructor(private readonly proxmoxService: ProxmoxService) {}
 
-  @Permissions(['proxmox_read', 'admin'])
+  @Permissions(['proxmox_read'], ['admin'])
   @Get('nodes')
   @ApiOperation({ summary: 'Get all nodes' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved nodes', type: [String] })
@@ -20,7 +20,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getNodes();
   }
 
-  @Permissions(['proxmox_read', 'admin'])
+  @Permissions(['proxmox_read'], ['admin'])
   @Get('nodes/:nodeName')
   @ApiOperation({ summary: 'Get information of a specific node' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved node information', type: String })
@@ -29,7 +29,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getNodeInfo(nodeName);
   }
 
-  @Permissions(['proxmox_read', 'admin'])
+  @Permissions(['proxmox_read'], ['admin'])
   @Get('nodes/:nodeName/vms')
   @ApiOperation({ summary: 'Get all VMs of a specific node' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved VMs of the node', type: [String] })
@@ -38,7 +38,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getVMs(nodeName);
   }
 
-  @Permissions(['proxmox_read', 'admin'])
+  @Permissions(['proxmox_read'], ['admin'])
   @Get('nodes/:nodeName/vms/:vmid/status')
   @ApiOperation({ summary: 'Get the status of a specific VM' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved VM status', type: String })
@@ -47,7 +47,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getVMStatus(nodeName, vmid);
   }
 
-  @Permissions(['proxmox_read', 'admin'])
+  @Permissions(['proxmox_read'], ['admin'])
   @Get('nodes/:nodeName/vms/:vmid/config')
   @ApiOperation({ summary: 'Get configuration of a specific VM' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved VM configuration', type: String })
@@ -56,7 +56,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getVMConfig(nodeName, vmid);
   }
 
-  @Permissions(['proxmox_read', 'admin'])
+  @Permissions(['proxmox_read'], ['admin'])
   @Get('nodes/:nodeName/vms/:vmid/storage')
   @ApiOperation({ summary: 'Get storage information of a specific VM' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved storage info', type: String })
@@ -77,7 +77,7 @@ export class ProxmoxController {
     return { message: `VM ${vmid} started successfully` };
   }
 
-  @Permissions('proxmox_read', 'proxmox_power', ['admin'])
+  @Permissions(['proxmox_read', 'proxmox_power'], ['admin'])
   @Post('nodes/:nodeName/vms/:vmid/stop')
   @ApiOperation({ summary: 'Stop a specific VM' })
   @ApiResponse({ status: 200, description: 'VM stopped successfully', type: Object })
@@ -88,7 +88,7 @@ export class ProxmoxController {
     return { message: `VM ${vmid} stopped successfully` };
   }
 
-  @Permissions('proxmox_read', 'proxmox_power', ['admin'])
+  @Permissions(['proxmox_read', 'proxmox_power'], ['admin'])
   @Post('nodes/:nodeName/vms/:vmid/shutdown')
   @ApiOperation({ summary: 'Shutdown a specific VM' })
   @ApiResponse({ status: 200, description: 'VM shutdown successfully', type: Object })

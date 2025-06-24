@@ -19,24 +19,26 @@ async function bootstrap() {
   const permissionSeeder = app.get(PermissionSeeder);
   await permissionSeeder.seedPermissions();
 
-  if (argv.email && argv.password && argv.permission) {
+  if (argv.email && argv.name && argv.password && argv.permission) {
     const userSeeder = app.get(UserSeeder);
     await userSeeder.seedUser({
       email: argv.email,
+      name: argv.name,
       password: argv.password,
       permission: argv.permission,
     });
   } 
-  else if(argv.email && !argv.password && argv.permission) {
+  else if(argv.email && argv.name && !argv.password && argv.permission) {
     const userSeeder = app.get(UserSeeder);
     await userSeeder.seedGoogleUser({
       email: argv.email,
+      name: argv.name || 'Google User',
       permission: argv.permission,
     });
   }
   else {
     console.log(
-      'Skipping user seeding. Provide --email, --password, and --permission (Local auth) or --email and --permission (Google auth) arguments to seed a user.'
+      'Skipping user seeding. Provide --email, --name, --password, and --permission (Local auth) or --email, --name and --permission (Google auth) arguments to seed a user.'
     );
   }
 
