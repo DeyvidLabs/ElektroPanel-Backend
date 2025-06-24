@@ -3,9 +3,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ExpressAdapter } from '@nestjs/platform-express';
 const cookieParser = require('cookie-parser');
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const adapter = new ExpressAdapter();
+  adapter.set('trust proxy', 1);
+  const app = await NestFactory.create(AppModule, adapter);
   
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || 3000;

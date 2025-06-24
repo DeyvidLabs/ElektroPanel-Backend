@@ -8,6 +8,8 @@ import { UserModule } from '../user/user.module';
 import { UserService } from '../user/user.service';
 import { PermissionService } from '../permission/permission.service';
 import { GoogleStrategy } from './google.strategy';
+import { MailerModule } from '../../mail/mailer.module';  // Import MailModule
+import { MailerService } from '../../mail/mailer.service';
 
 @Module({
   imports: [
@@ -21,15 +23,16 @@ import { GoogleStrategy } from './google.strategy';
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d' },
       }),
-    }),    
+    }),
     UserModule,
+    MailerModule,  // Ensure MailModule is imported here
   ],
   providers: [
-    AuthService, 
-    UserService, 
+    AuthService,
+    UserService,
     PermissionService,
     GoogleStrategy,
-    
+    MailerService,  // This is fine, as MailService is now injectable via MailModule
   ],
   controllers: [AuthController],
   exports: [AuthService],

@@ -1,7 +1,13 @@
-import { Injectable, CanActivate, ExecutionContext, UnauthorizedException, ForbiddenException } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { UserService } from "../../features/user/user.service";
-import { PermissionDTO } from "../dto/permission.dto";
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+  ForbiddenException
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { UserService } from '../../features/user/user.service';
+import { PermissionDTO } from '../dto/permission.dto';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -12,10 +18,11 @@ export class PermissionsGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions = this.reflector.get<(string | string[])[]>('permissions', context.getHandler());
+
     if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true;
+      return true; // Nessun permesso richiesto
     }
-  
+
     const request = context.switchToHttp().getRequest();
     const userId = request.user?.id;
 
@@ -23,48 +30,45 @@ export class PermissionsGuard implements CanActivate {
       throw new UnauthorizedException('User is not authenticated.');
     }
 
-    const userPermissions: PermissionDTO[] = request.user?.permissions; 
-    if (!userPermissions) {
-      throw new UnauthorizedException('User permissions not found');
+    const userPermissions: PermissionDTO[] = await this.usersService.getUserPermissions(userId) ?? [];
+
+    if (!userPermissions || userPermissions.length === 0) {
+      throw new UnauthorizedException('User permissions not found.');
     }
 
-    // Normalize user permissions to uppercase
     const userPermissionSet = new Set(
       userPermissions.map(p => p.name.toUpperCase())
     );
 
-    // Check if user is admin
-    const isAdmin = userPermissionSet.has('ADMIN');
-
-    // If user is admin, grant access immediately
-    if (isAdmin) {
+    if (userPermissionSet.has('ADMIN')) {
       return true;
     }
 
-    // Check required permissions
-    const hasPermission = (permissions: (string | string[])[]) => {
-      return permissions.some(permission =>
-        Array.isArray(permission)
-          ? permission.every(p => this.checkPermission(p, userPermissionSet)) // Tutti i permessi nel gruppo devono essere soddisfatti
-          : this.checkPermission(permission, userPermissionSet) // Permesso singolo
-      );
+    const hasPermission = (permissions: (string | string[])[]): boolean => {
+      return permissions.some(permissionGroup => {
+        const normalizedGroup = Array.isArray(permissionGroup)
+          ? permissionGroup
+          : [permissionGroup];
+
+        return normalizedGroup.every(p =>
+          this.checkPermission(p.toUpperCase(), userPermissionSet)
+        );
+      });
     };
 
-    if (!hasPermission) {
-      throw new ForbiddenException('You do not have permission to access this resource');
+    if (!hasPermission(requiredPermissions)) {
+      throw new ForbiddenException('You do not have permission to access this resource.');
     }
-
 
     return true;
   }
 
   private checkPermission(permission: string, userPermissions: Set<string>): boolean {
-    // Exact match
     if (userPermissions.has(permission)) {
       return true;
     }
 
-    // Wildcard matching
+    // Wildcard support (es: "proxmox_*")
     if (permission.includes('*')) {
       const regex = new RegExp(`^${permission.replace(/\*/g, '.*')}$`);
       return Array.from(userPermissions).some(userPerm => regex.test(userPerm));

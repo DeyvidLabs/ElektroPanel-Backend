@@ -1,5 +1,6 @@
-import { IsEmail, IsOptional, IsString, IsUUID, Length } from 'class-validator';
+import { IsBoolean, IsDate, IsEmail, IsISO8601, IsOptional, isString, IsString, IsUUID, Length } from 'class-validator';
 import { Permission } from '../../database/permission.entity';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserDto {
   @IsEmail()
@@ -37,7 +38,6 @@ export class UpdateUserDto {
   @IsString()
   googleId?: string;
 
-  @IsOptional()
   @IsString()
   @Length(1, 50)
   provider?: string;
@@ -67,3 +67,49 @@ export class UserResponseDto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export class UserPublicDto {
+  @IsUUID()
+  id: string;
+
+  @ApiProperty({ example: 'John Doe' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: false })
+  @IsBoolean()
+  google: boolean;
+
+  permissions: Permission[];
+}
+
+export class UserPrivateDto {
+  @IsUUID()
+  id: string;
+  
+  @ApiProperty({ example: 'John Doe' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'john@example.com' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ example: new Date().toISOString() })
+  createdAt: Date; // No @IsDate() needed for output DTO
+
+  @ApiProperty({ example: 'google' })
+  @IsString()
+  provider: string;
+
+  @ApiProperty({ example: false })
+  @IsBoolean()
+  enabled: boolean;
+
+  permissions: Permission[];
+}
+

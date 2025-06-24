@@ -11,8 +11,8 @@ export class UserSeeder {
     private readonly permissionService: PermissionService,
   ) {}
 
-  public async seedUser(argv: { email: string; password: string; permission: string }): Promise<void> {
-    const { email, password, permission } = argv;
+  public async seedUser(argv: { email: string; name:string; password: string; permission: string }): Promise<void> {
+    const { email, name, password, permission } = argv;
     const permissionNames = permission.split(',').map((name: string) => name.trim().toUpperCase());
 
     const permissionEntities = await Promise.all(
@@ -42,14 +42,16 @@ export class UserSeeder {
       password: hashedPassword,
       permissions: validPermissions,
       provider: 'local',
+      enabled: true,
+      name: name
     });
 
-    console.log(`✅ User created with email: ${email}`);
+    console.log(`✅ Created user (${name}) with email: ${email}`);
     console.log(`User ID: ${newUser.id}`);
   }
 
-  public async seedGoogleUser(argv: { email: string; permission: string }): Promise<void> {
-    const { email, permission } = argv;
+  public async seedGoogleUser(argv: { email: string; name:string; permission: string }): Promise<void> {
+    const { email, name, permission } = argv;
     const permissionNames = permission.split(',').map((name: string) => name.trim().toUpperCase());
 
     const permissionEntities = await Promise.all(
@@ -76,9 +78,12 @@ export class UserSeeder {
       email,
       permissions: validPermissions,
       provider: 'google',
+      enabled: true,
+      name: name
+
     });
 
-    console.log(`✅ User created with email: ${email}`);
+    console.log(`✅ Created user (${name}) with email: ${email}`);
     console.log(`User ID: ${newUser.id}`);
   }
 }

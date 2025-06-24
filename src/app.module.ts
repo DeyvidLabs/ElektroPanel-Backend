@@ -14,17 +14,20 @@ import { PermissionModule } from './features/permission/permission.module';
 import { AuthGuard } from './shared/guards/auth.guard';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ProxmoxModule } from './features/components/proxmox/proxmox.module';
+import { MailerModule } from './mail/mailer.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'mysql',
       url: process.env.DATABASE_URL,
       entities: [User, Permission],
-      synchronize: process.env.NODE_ENV === "development",
+      // synchronize: process.env.NODE_ENV === "development",
+      synchronize: true,
       logging: process.env.NODE_ENV === "development",
     }),
     AuthModule,
     UserModule,
+    MailerModule,
     PermissionModule,
     ThrottlerModule.forRoot({
       throttlers: [
