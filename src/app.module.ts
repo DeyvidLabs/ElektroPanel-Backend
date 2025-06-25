@@ -33,7 +33,7 @@ import { MailerModule } from './mail/mailer.module';
       throttlers: [
         {
           ttl: 60000,
-          limit: 3,
+          limit: 10,
         },
       ],
     }),
@@ -47,13 +47,13 @@ import { MailerModule } from './mail/mailer.module';
     },
     {
       provide: APP_GUARD,
-      useClass: PermissionsGuard,
+      useClass: ThrottlerGuard,  // Throttling first
     },
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard
+      useClass: PermissionsGuard,  // Permissions second
     },
     PermissionService,
-  ],
+  ]
 })
 export class AppModule  { }
