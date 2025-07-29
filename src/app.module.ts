@@ -15,12 +15,18 @@ import { AuthGuard } from './shared/guards/auth.guard';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ProxmoxModule } from './features/components/proxmox/proxmox.module';
 import { MailerModule } from './mail/mailer.module';
+import { EmailModule } from './features/components/email/email.module';
+import { EmailEvent } from './database/email-event.entity';
+import { LogFileState } from './database/log-file-state.entity';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ConnectionEvent } from './database/connection.entity';
+import { MailUser } from './database/mail-user.entity';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'mysql',
       url: process.env.DATABASE_URL,
-      entities: [User, Permission],
+      entities: [User, Permission, EmailEvent, LogFileState, ConnectionEvent, MailUser],
       // synchronize: process.env.NODE_ENV === "development",
       synchronize: true,
       logging: process.env.NODE_ENV === "development",
@@ -37,7 +43,9 @@ import { MailerModule } from './mail/mailer.module';
         },
       ],
     }),
+    ScheduleModule.forRoot(),
     ProxmoxModule,
+    EmailModule,
   ],
   providers: [
     UserService,

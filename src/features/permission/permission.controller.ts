@@ -6,8 +6,8 @@ import { Response } from 'express';
 import { Permissions } from '../../shared/decorators/permissions.decorator';
 import { SkipThrottle } from '@nestjs/throttler';
 @ApiBearerAuth('Bearer token')
-@ApiTags('permission')
 @Controller('permission')
+@ApiTags('Permission')
 @Permissions('admin')
 @SkipThrottle()
 export class PermissionController {

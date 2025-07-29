@@ -10,7 +10,7 @@ import { GoogleOAuthGuard } from '../../shared/guards/google-oauth.guard';
 import { SkipThrottle } from '@nestjs/throttler';
 import { MailerService } from '../../mail/mailer.service';
 
-@ApiTags('auth')
+@ApiTags('Auth')
 @Controller('auth')
 @Public()
 @SkipThrottle()

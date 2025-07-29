@@ -22,13 +22,14 @@ import {
   ApiBadRequestResponse,
 } from '@nestjs/swagger';
 import { Request } from 'express';
-import { UserPrivateDto, UserPublicDto, UserResponseDto } from '../../shared/dto/user.dto';
+import { UserPrivateDTO, UserPublicDTO, UserResponseDTO } from '../../shared/dto/user.dto';
 import {
-  UpdateDisplayNameDto,
-  UpdateEmailDto,
-  UpdatePasswordDto,
-  DeleteAccountDto,
-  AdminDeleteAccountDto
+  UpdateDisplayNameDTO,
+  UpdateEmailDTO,
+  UpdatePasswordDTO,
+  DeleteAccountDTO,
+  AdminDeleteAccountDTO,
+  EmailExistsDTO
 } from '../../shared/dto/user-settings.dto';
 import { UserService } from './user.service';
 import { AuthService } from '../auth/auth.service';
@@ -38,7 +39,7 @@ import { MailerService } from '../../mail/mailer.service';
 import { Response } from 'express';
 
 @ApiBearerAuth('Bearer token')
-@ApiTags('users')
+@ApiTags('User')
 @Controller('users')
 export class UserController {
   constructor(
@@ -47,8 +48,8 @@ export class UserController {
     private readonly mailerService: MailerService,
   ) {}
 
-  private getUserFromRequest(req: Request): UserResponseDto {
-    const user = req.user as UserResponseDto;
+  private getUserFromRequest(req: Request): UserResponseDTO {
+    const user = req.user as UserResponseDTO;
     if (!user) throw new UnauthorizedException('User is not authenticated.');
     return user;
   }
@@ -58,7 +59,7 @@ export class UserController {
   @ApiOkResponse({ description: "Returns a JSON with the user's data" })
   @ApiUnauthorizedResponse({ description: 'Authentication failed' })
   @Get('me')
-  async getCurrentUser(@Req() req: Request, @Res() response: Response): Promise<UserPublicDto | void> {
+  async getCurrentUser(@Req() req: Request, @Res() response: Response): Promise<UserPublicDTO | void> {
     const user = this.getUserFromRequest(req);
     const storedUser = await this.userService.getUserById(user.id);
     if(!storedUser){
@@ -81,7 +82,7 @@ export class UserController {
   @ApiUnauthorizedResponse({ description: 'Authentication failed' })
   @Get('getAll')
   @Permissions('admin')
-  async getAllUsers(@Req() req: Request): Promise<UserPrivateDto[]> {
+  async getAllUsers(@Req() req: Request): Promise<UserPrivateDTO[]> {
     const users = await this.userService.getAllUsers();
     return users.map(user => ({
       id: user.id,
@@ -96,6 +97,7 @@ export class UserController {
 
   @SkipThrottle()
   @ApiOperation({ summary: "Checks if an email is already in use" })
+  @ApiBody({ type: EmailExistsDTO })
   @ApiOkResponse({ description: "Returns true if the email is in use, false otherwise" })
   @ApiUnauthorizedResponse({ description: 'Authentication failed' })
   @Post('emailExists')
@@ -107,10 +109,10 @@ export class UserController {
 
   @Patch('display-name')
   @ApiOperation({ summary: 'Update display name' })
-  @ApiBody({ type: UpdateDisplayNameDto })
+  @ApiBody({ type: UpdateDisplayNameDTO })
   @ApiOkResponse({ description: 'Display name updated successfully' })
   @Permissions('user')
-  async updateDisplayName(@Req() req: Request, @Body() dto: UpdateDisplayNameDto) {
+  async updateDisplayName(@Req() req: Request, @Body() dto: UpdateDisplayNameDTO) {
     const user = this.getUserFromRequest(req);
     await this.userService.updateUser(user.id, { name: dto.displayName });
     return { message: 'Display name updated' };
@@ -118,10 +120,10 @@ export class UserController {
 
   @Patch('password')
   @ApiOperation({ summary: 'Update password' })
-  @ApiBody({ type: UpdatePasswordDto })
+  @ApiBody({ type: UpdatePasswordDTO })
   @ApiOkResponse({ description: 'Password updated successfully' })
   @Permissions('user')
-  async updatePassword(@Req() req: Request, @Body() dto: UpdatePasswordDto) {
+  async updatePassword(@Req() req: Request, @Body() dto: UpdatePasswordDTO) {
     const user = this.getUserFromRequest(req);
     await this.userService.updatePassword(user.id, dto.currentPassword, dto.newPassword);
     return { message: 'Password updated' };
@@ -129,10 +131,10 @@ export class UserController {
 
   @Delete('delete-email')
   @ApiOperation({ summary: 'Delete account permanently (USER)' })
-  @ApiBody({ type: DeleteAccountDto })
+  @ApiBody({ type: DeleteAccountDTO })
   @ApiOkResponse({ description: 'Mail for account deletion sent successfully' })
   @Permissions('user')
-  async deleteAccount(@Req() req: Request, @Body() dto: DeleteAccountDto) {
+  async deleteAccount(@Req() req: Request, @Body() dto: DeleteAccountDTO) {
     const user = this.getUserFromRequest(req);
     const storedUser = await this.userService.getUserById(user.id);
     if (!storedUser) throw new UnauthorizedException('User not found.');
@@ -223,7 +225,7 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'Invalid email or already in use' })
   @Post('email')
   @Permissions('user')
-  async requestEmailChange(@Body() body: UpdateEmailDto, @Req() req, @Res() res: Response) {
+  async requestEmailChange(@Body() body: UpdateEmailDTO, @Req() req, @Res() res: Response) {
     const user = this.getUserFromRequest(req);
 
     const existing = await this.userService.getUserByEmail(body.newEmail);
@@ -244,7 +246,7 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'User not found' })
   @Delete('delete')
   @Permissions('admin')
-  async deleteByAdmin(@Body() body: AdminDeleteAccountDto, @Req() req, @Res() res: Response) {
+  async deleteByAdmin(@Body() body: AdminDeleteAccountDTO, @Req() req, @Res() res: Response) {
     this.getUserFromRequest(req);
 
     const existing = await this.userService.getUserByEmail(body.email);

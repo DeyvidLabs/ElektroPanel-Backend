@@ -5,13 +5,13 @@ import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { SkipThrottle } from '@nestjs/throttler';
 
 @ApiBearerAuth('Bearer token')
-@ApiTags('proxmox')
+@ApiTags('Proxmox')
 @Controller('proxmox')
 @SkipThrottle()
 export class ProxmoxController {
   constructor(private readonly proxmoxService: ProxmoxService) {}
 
-  @Permissions(['proxmox_read'], ['admin'])
+  @Permissions(['proxmox_read'])
   @ApiOperation({ summary: 'Get all nodes' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved nodes', type: [String] })
   @ApiResponse({ status: 403, description: 'Forbidden' })
@@ -20,7 +20,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getNodes();
   }
 
-  @Permissions(['proxmox_read'], ['admin'])
+  @Permissions(['proxmox_read'])
   @ApiOperation({ summary: 'Get information of a specific node' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved node information', type: String })
   @ApiResponse({ status: 404, description: 'Node not found' })
@@ -29,7 +29,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getNodeInfo(nodeName);
   }
 
-  @Permissions(['proxmox_read'], ['admin'])
+  @Permissions(['proxmox_read'])
   @ApiOperation({ summary: 'Get all VMs of a specific node' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved VMs of the node', type: [String] })
   @ApiResponse({ status: 404, description: 'Node not found' })
@@ -38,7 +38,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getVMs(nodeName);
   }
 
-  @Permissions(['proxmox_read'], ['admin'])
+  @Permissions(['proxmox_read'])
   @ApiOperation({ summary: 'Get the status of a specific VM' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved VM status', type: String })
   @ApiResponse({ status: 404, description: 'VM not found' })
@@ -47,7 +47,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getVMStatus(nodeName, vmid);
   }
 
-  @Permissions(['proxmox_read'], ['admin'])
+  @Permissions(['proxmox_read'])
   @ApiOperation({ summary: 'Get configuration of a specific VM' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved VM configuration', type: String })
   @ApiResponse({ status: 404, description: 'VM not found' })
@@ -56,7 +56,7 @@ export class ProxmoxController {
     return await this.proxmoxService.getVMConfig(nodeName, vmid);
   }
 
-  @Permissions(['proxmox_read'], ['admin'])
+  @Permissions(['proxmox_read'])
   @ApiOperation({ summary: 'Get storage information of a specific VM' })
   @ApiResponse({ status: 200, description: 'Successfully retrieved storage info', type: String })
   @ApiResponse({ status: 404, description: 'VM not found' })
@@ -66,7 +66,7 @@ export class ProxmoxController {
     return storage;
   }
 
-  @Permissions(['proxmox_read', 'proxmox_power'], ['admin'])
+  @Permissions(['proxmox_read', 'proxmox_power'])
   @ApiOperation({ summary: 'Start a specific VM' })
   @ApiResponse({ status: 200, description: 'VM started successfully', type: Object })
   @ApiResponse({ status: 404, description: 'VM not found' })
@@ -78,7 +78,7 @@ export class ProxmoxController {
     return { message: `VM ${vmid} started successfully` };
   }
 
-  @Permissions(['proxmox_read', 'proxmox_power'], ['admin'])
+  @Permissions(['proxmox_read', 'proxmox_power'])
   @ApiOperation({ summary: 'Stop a specific VM' })
   @ApiResponse({ status: 200, description: 'VM stopped successfully', type: Object })
   @ApiResponse({ status: 404, description: 'VM not found' })
@@ -90,7 +90,7 @@ export class ProxmoxController {
     return { message: `VM ${vmid} stopped successfully` };
   }
 
-  @Permissions(['proxmox_read', 'proxmox_power'], ['admin'])
+  @Permissions(['proxmox_read', 'proxmox_power'])
   @ApiOperation({ summary: 'Shutdown a specific VM' })
   @ApiResponse({ status: 200, description: 'VM shutdown successfully', type: Object })
   @ApiResponse({ status: 404, description: 'VM not found' })
