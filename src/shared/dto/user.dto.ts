@@ -2,7 +2,7 @@ import { IsBoolean, IsDate, IsEmail, IsISO8601, IsOptional, isString, IsString, 
 import { Permission } from '../../database/permission.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateUserDto {
+export class CreateUserDTO {
   @IsEmail()
   email: string;
 
@@ -24,7 +24,7 @@ export class CreateUserDto {
   permissions: Permission[];
 }
 
-export class UpdateUserDto {
+export class UpdateUserDTO {
   @IsOptional()
   @IsEmail()
   email?: string;
@@ -46,7 +46,7 @@ export class UpdateUserDto {
   permissions?: Permission[];
 }
 
-export class UserResponseDto {
+export class UserResponseDTO {
   @IsUUID()
   id: string;
 
@@ -68,7 +68,7 @@ export class UserResponseDto {
   updatedAt: Date;
 }
 
-export class UserPublicDto {
+export class UserPublicDTO {
   @IsUUID()
   id: string;
 
@@ -87,7 +87,7 @@ export class UserPublicDto {
   permissions: Permission[];
 }
 
-export class UserPrivateDto {
+export class UserPrivateDTO {
   @IsUUID()
   id: string;
   
