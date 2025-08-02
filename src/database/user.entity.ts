@@ -32,14 +32,14 @@ export class User {
   @Column({ type: 'boolean', default: false })
   enabled: boolean;
 
-  @Column({ type: 'boolean', default: false })
-  deleted: boolean;
-
   @Column({ type: 'varchar', nullable: true })
   ipAddress?: string;
 
   @Column({ type: 'timestamp', nullable: true })
   activatedAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastLogin?: Date;
 
   @CreateDateColumn()
   createdAt: Date;

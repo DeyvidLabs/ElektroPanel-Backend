@@ -33,6 +33,11 @@ export class UserService {
     return user;
   }
 
+  async isUserAuthenticadWithGoogle(id: string): Promise<boolean | null> {
+    const user = await this.getUserById(id);
+    return user?.provider === 'google';
+  }
+
   async getUserPermissions(id: string): Promise<Permission[] | null> {
     const user = await this.userRepository.findOne({ where: { id }, relations: ['permissions'] });
     return user ? user.permissions : null;

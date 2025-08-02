@@ -82,7 +82,7 @@ export class UserController {
   @ApiUnauthorizedResponse({ description: 'Authentication failed' })
   @Get('getAll')
   @Permissions('admin')
-  async getAllUsers(@Req() req: Request): Promise<UserPrivateDTO[]> {
+  async getAllUsers(): Promise<UserPrivateDTO[]> {
     const users = await this.userService.getAllUsers();
     return users.map(user => ({
       id: user.id,
@@ -91,7 +91,8 @@ export class UserController {
       createdAt: user.createdAt,
       provider: user.provider,
       enabled: user.enabled,
-      permissions: user.permissions
+      permissions: user.permissions,
+      lastLogin: user.lastLogin
     }));
   }
 
@@ -147,7 +148,7 @@ export class UserController {
     const isPasswordValid = await this.authService.comparePasswords(password, storedUser.password);
     if (!isPasswordValid) throw new UnauthorizedException('Invalid password.');
 
-    await this.mailerService.sendDeletionEmail(user.email, user.id);
+    await this.mailerService.sendDeletionEmail(storedUser.email, user.id);
     return { message: 'Deletion email sent. Please check your inbox.' };
   }
 
@@ -225,9 +226,14 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'Invalid email or already in use' })
   @Post('email')
   @Permissions('user')
-  async requestEmailChange(@Body() body: UpdateEmailDTO, @Req() req, @Res() res: Response) {
+  async requestEmailChange(@Body() body: UpdateEmailDTO, @Req() req: Request, @Res() res: Response) {
     const user = this.getUserFromRequest(req);
-    
+
+    const isUserAuthenticadWithGoogle = await this.userService.isUserAuthenticadWithGoogle(user.id);
+    if(isUserAuthenticadWithGoogle){
+      throw new BadRequestException('Cannot change email while using Google');
+    }
+
     const existing = await this.userService.getUserByEmail(body.newEmail);
     if (existing) {
       throw new BadRequestException('Email already in use');
@@ -248,6 +254,11 @@ export class UserController {
   @Permissions('admin')
   async deleteByAdmin(@Body() body: AdminDeleteAccountDTO, @Req() req, @Res() res: Response) {
     const user = this.getUserFromRequest(req);
+
+    const userDb = await this.userService.getUserById(user.id);
+    if(userDb?.email === body.email) {
+        throw new BadRequestException('Cannot delete your account.');
+    }
 
     const existing = await this.userService.getUserByEmail(body.email);
     if (!existing) {
