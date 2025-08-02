@@ -1,16 +1,13 @@
-import { forwardRef, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { CookieOptions } from 'express';
 import * as jwt from 'jsonwebtoken';
 import * as ms from 'ms';
-import { MailerService } from '../../mail/mailer.service';
 @Injectable()
 export class AuthService {
   constructor(
-    private jwtService: JwtService, 
-    @Inject(forwardRef(() => MailerService)) private mailService: MailerService,
-
+    private jwtService: JwtService,
   ) {}
 
   private readonly jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -30,9 +27,9 @@ export class AuthService {
   async generateJwtToken(user: any): Promise<string> {
     return this.jwtService.sign({ 
       id: user.id, 
-      email: user.email, 
+      // email: user.email, 
       // permissions: user.permissions,
-      name: user.name || null
+      // name: user.name || null
     }, {
       secret: this.jwtSecret,
       expiresIn: this.jwtExpiration,
@@ -42,9 +39,9 @@ export class AuthService {
   async generateRefreshToken(user: any): Promise<string> {
     return jwt.sign({ 
       id: user.id, 
-      email: user.email, 
+      // email: user.email, 
       // permissions: user.permissions,
-      name: user.name || null
+      // name: user.name || null
     }, this.refreshTokenSecret, {
       expiresIn: this.refreshTokenExpiration,
     });

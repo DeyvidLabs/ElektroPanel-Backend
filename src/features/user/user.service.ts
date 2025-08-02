@@ -1,9 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, forwardRef, Inject, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { User } from '../../database/user.entity';
 import { Permission } from '../../database/permission.entity';
 import { AuthService } from '../auth/auth.service';
+import { LoggingService } from '../../logging/logging.service';
+import { Request } from 'express';
 
 @Injectable()
 export class UserService {
@@ -13,6 +15,7 @@ export class UserService {
     @InjectRepository(Permission)
     private readonly permissionRepository: Repository<Permission>,    
     private readonly authService: AuthService,
+    private readonly loggingService: LoggingService
   ) {}
 
   async createUser(data: Partial<User>): Promise<User> {
@@ -21,7 +24,7 @@ export class UserService {
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { email }, relations: ['permissions'] });
+    const user = await this.userRepository.findOne({ where: { email: email }, relations: ['permissions'] });
     return user;
   }
 
@@ -40,71 +43,124 @@ export class UserService {
   }
 
   async updateUser(id: string, data: Partial<User>): Promise<User> {
-    try{
+    try {
       await this.userRepository.update(id, data);
       const updatedUser = await this.userRepository.findOne({ where: { id } });
-      if (!updatedUser) {
-        throw new Error('User not found');
-      }
+      if (!updatedUser) throw new Error('User not found');
       return updatedUser;
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
-        throw new ConflictException(`Error: Could not update user`);
+        throw new ConflictException('Error: Could not update user');
       }
-      throw new InternalServerErrorException('Error: Could not update userr');
+      throw new InternalServerErrorException('Error: Could not update user');
     }
   }
 
-  async updatePassword(id: string, currentPassword: string, newPassword: string): Promise<User> {
+  async updateDisplayName(id: string, name: string, req: Request): Promise<User> {
+    const oldName = (await this.getUserById(id))?.name;
+    const updatedUser = await this.updateUser(id, { name });
+
+    await this.loggingService.logAction(req, {
+      service: 'account',
+      action: 'user_display_name_changed',
+      actor: {
+        type: 'user',
+      },
+      target: {
+        type: 'user',
+        id: updatedUser.id,
+        name: oldName,
+      },
+      metadata: {
+        changedBy: updatedUser.id,
+        field: 'name',
+      },
+    });
+
+    return updatedUser;
+  }
+
+  async updateEmail(id: string, payload: { userId: string; email: string; newEmail: string; }, req: Request): Promise<User> {
+    const updatedUser = await this.updateUser(id, { email: payload.newEmail });
+
+    await this.loggingService.logAction(req, {
+      service: 'account',
+      action: 'user_email_changed',
+      actor: {
+        type: 'user',
+      },
+      target: {
+        type: 'user',
+        id: updatedUser.id,
+        name: updatedUser.name,
+      },
+      metadata: {
+        changedBy: payload.userId,
+        oldEmail: payload.email,
+        newEmail: payload.newEmail,
+        field: 'email',
+        payload: payload
+      },
+    });
+
+    return updatedUser;
+  }
+
+  async updatePassword(id: string, currentPassword: string, newPassword: string, req: Request): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id } });
-    
-    if (!user) {
-      throw new Error('User not found');
-    }
+    if (!user) throw new Error('User not found');
 
-    // Case 1: If the user is using Google (google provider)
-    if (user.provider === "google") {
-      // If the user doesn't have a password, allow them to set one
+    const hashAndLog = async () => {
+      await this.userRepository.update(id, {
+        password: await this.authService.hashPassword(newPassword),
+        provider: user.provider === 'google' ? 'combined' : user.provider,
+      });
+
+      await this.loggingService.logAction(req, {
+        service: 'account',
+        action: 'user_password_changed',
+        actor: {
+          type: 'user',
+        },
+        target: {
+          type: 'user',
+          id: user.id,
+          name: user.name,
+        },
+        metadata: {
+          method: 'manual',
+          changedBy: user.id,
+        },
+      });
+    };
+
+    const verifyPassword = async () => {
+      if (!user.password) throw new BadRequestException('User password not set');
+      const valid = await this.authService.comparePasswords(currentPassword, user.password);
+      if (!valid) throw new UnauthorizedException('Current password is incorrect');
+    };
+
+    if (user.provider === 'google') {
       if (!user.password) {
-        // Hash the new password and save it
-        await this.userRepository.update(id, { password: await this.authService.hashPassword(newPassword), provider: "combined" });
-        return user;
-      }
-      // If the user already has a password (combined provider), they are allowed to change it
-      else {
-        // Verify current password if they have one
-        const userPassword = user.password;
-        if (!userPassword) {
-          throw new BadRequestException('User password not set');
-        }
-        if (await this.authService.comparePasswords(currentPassword, userPassword)) {
-          // Hash and update password
-          await this.userRepository.update(id, { password: await this.authService.hashPassword(newPassword) });
-          return user;
-        } else {
-          throw new UnauthorizedException('Current password is incorrect');
-        }
-      }
-    }
-
-    // Case 2: If the user is using a local or combined provider
-    if (user.provider === "local" || user.provider === "combined") {
-      // Verify the current password
-      const userPassword = user.password;
-      if (!userPassword) {
-        throw new BadRequestException('User password not set');
-      }
-      if (await this.authService.comparePasswords(currentPassword, userPassword)) {
-        // Hash and update password
-        await this.userRepository.update(id, { password: await this.authService.hashPassword(newPassword) });
+        // First password set
+        await hashAndLog();
         return user;
       } else {
-        throw new UnauthorizedException('Current password is incorrect');
+        await verifyPassword();
+        await hashAndLog();
+        return user;
       }
     }
 
-    return user;
+    if (user.provider === 'local' || user.provider === 'combined') {
+      await verifyPassword();
+      await hashAndLog();
+      return user;
+    }
+
+    throw new BadRequestException('Unsupported provider');
   }
+
 
   async adminDeleteUser(id: string): Promise<void> {
     const user = await this.userRepository.findOne({ where: { id } });

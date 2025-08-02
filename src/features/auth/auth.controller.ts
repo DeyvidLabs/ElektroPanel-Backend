@@ -286,18 +286,15 @@ export class AuthController {
   @ApiOkResponse({ description: 'Email change request sent. Please verify the new email.' })
   @ApiBadRequestResponse({ description: 'Invalid email or already in use' })
   @Get('change-email')
-  async updateEmail(@Query('token') token: string, @Res() res: Response) {
+  async updateEmail(@Req() req: Request, @Query('token') token: string, @Res() res: Response) {
     const payload = await this.mailerService.verfiyEmailtoken(token);
-
     const user = await this.userService.getUserById(payload.userId);
     if (!user) {
       throw new BadRequestException('User not found');
     }
-
-    // await this.userService.deleteUser(user.id); // Assumi che `deleteUser` accetti ID + password
-    await this.userService.updateUser(user.id, {email: payload.newEmail });
     res.clearCookie('access_token');
     res.clearCookie('refresh_token');
+    await this.userService.updateEmail(user.id, payload, req);
     return res.redirect(`${process.env.FRONTEND_URL}/?message=Mail was changed, login again to proceed.`);
   }
 

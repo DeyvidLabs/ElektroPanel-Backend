@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../../database/user.entity';
 import { Permission } from '../../database/permission.entity';
@@ -9,11 +9,12 @@ import { UserSeeder } from '../../../scripts/user.seed';
 import { PermissionService } from '../permission/permission.service';
 import { AuthService } from '../auth/auth.service';
 import { MailerModule } from '../../mail/mailer.module';
-
+import { LoggingModule } from '../../logging/logging.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Permission]),
-    MailerModule
+    MailerModule,
+    LoggingModule
   ],
   controllers: [UserController],
   providers: [

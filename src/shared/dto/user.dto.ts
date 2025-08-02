@@ -46,6 +46,23 @@ export class UpdateUserDTO {
   permissions?: Permission[];
 }
 
+export class UserLoggingDTO {
+  @IsUUID()
+  id: string;
+
+  @IsString()
+  name: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  ipAddress: string;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export class UserResponseDTO {
   @IsUUID()
   id: string;

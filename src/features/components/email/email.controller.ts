@@ -1,17 +1,17 @@
-import { Controller, Get, Post, Delete, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, UnauthorizedException, Req } from '@nestjs/common';
 import { Permissions } from '../../../shared/decorators/permissions.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiBody } from '@nestjs/swagger';
 import { EmailStatsDTO, BlacklistIPInfoDTO, MailUserDTO } from '../../../shared/dto/email.dto';
 import { IBlacklistIPInfo, IEmailHistory, EmailService } from './email.service';
 import { BlacklistService } from './blacklist.service';
-
+import { Request } from 'express';
 @ApiBearerAuth('Bearer token')
 @ApiTags('Email')
 @Controller('email')
 export class EmailController {
   constructor(
     private readonly emailService: EmailService,
-    private readonly blacklistService: BlacklistService
+    private readonly blacklistService: BlacklistService,
   ) {}
 
   @Permissions(['email_read'])
@@ -55,10 +55,10 @@ export class EmailController {
   @ApiQuery({ name: 'ip', required: true, description: 'IP address to blacklist', example: '192.168.1.10' })
   @ApiResponse({ status: 200, description: 'IP successfully blacklisted' })
   @Post('blacklist')
-  async blacklistIp(@Query('ip') ip: string): Promise<{ message: string }> {
+  async blacklistIp(@Req() req: Request, @Query('ip') ip: string): Promise<{ message: string }> {
     const blacklisted = await this.blacklistService.blockIp(ip);
     if (blacklisted) {
-      await this.emailService.toggleIPAddressBlacklist(ip, true); // Set IP as blacklisted in DB
+      await this.emailService.toggleIPAddressBlacklist(ip, true, req); // Set IP as blacklisted in DB
       return { message: `IP ${ip} has been successfully blacklisted` };
     } else {
       return { message: `Failed to block IP ${ip}` };
@@ -70,10 +70,10 @@ export class EmailController {
   @ApiQuery({ name: 'ip', required: true, description: 'IP address to unblock', example: '192.168.1.10' })
   @ApiResponse({ status: 200, description: 'IP successfully unblocked' })
   @Delete('blacklist')
-  async unblacklistIp(@Query('ip') ip: string): Promise<{ message: string }> {
+  async unblacklistIp(@Req() req: Request, @Query('ip') ip: string): Promise<{ message: string }> {
     const unblacklisted = await this.blacklistService.unblockIp(ip);
     if (unblacklisted) {
-      await this.emailService.toggleIPAddressBlacklist(ip, false); // Set IP as unblacklisted in DB
+      await this.emailService.toggleIPAddressBlacklist(ip, false, req); // Set IP as unblacklisted in DB
       return { message: `IP ${ip} has been successfully unblocked` };
     } else {
       return { message: `Failed to unblock IP ${ip}` };

@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Param, Post, Req } from '@nestjs/common';
 import { ProxmoxService } from './proxmox.service';
 import { Permissions } from '../../../shared/decorators/permissions.decorator';
 import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
+import { Request } from 'express';
 
 @ApiBearerAuth('Bearer token')
 @ApiTags('Proxmox')
@@ -73,8 +74,8 @@ export class ProxmoxController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @Post('nodes/:nodeName/vms/:vmid/start')
   @SkipThrottle({ default: false })
-  async startVM(@Param('nodeName') nodeName: string, @Param('vmid') vmid: number) {
-    await this.proxmoxService.startVM(nodeName, vmid);
+  async startVM(@Req() req: Request, @Param('nodeName') nodeName: string, @Param('vmid') vmid: number) {
+    await this.proxmoxService.startVM(nodeName, vmid, req);
     return { message: `VM ${vmid} started successfully` };
   }
 
@@ -85,8 +86,8 @@ export class ProxmoxController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @Post('nodes/:nodeName/vms/:vmid/stop')
   @SkipThrottle({ default: false })
-  async stopVM(@Param('nodeName') nodeName: string, @Param('vmid') vmid: number) {
-    await this.proxmoxService.stopVM(nodeName, vmid);
+  async stopVM(@Req() req: Request, @Param('nodeName') nodeName: string, @Param('vmid') vmid: number) {
+    await this.proxmoxService.stopVM(nodeName, vmid, req);
     return { message: `VM ${vmid} stopped successfully` };
   }
 
@@ -97,8 +98,8 @@ export class ProxmoxController {
   @ApiResponse({ status: 403, description: 'Forbidden' })
   @Post('nodes/:nodeName/vms/:vmid/shutdown')
   @SkipThrottle({ default: false })
-  async shutdownVM(@Param('nodeName') nodeName: string, @Param('vmid') vmid: number) {
-    await this.proxmoxService.shutdownVM(nodeName, vmid);
+  async shutdownVM(@Req() req: Request, @Param('nodeName') nodeName: string, @Param('vmid') vmid: number) {
+    await this.proxmoxService.shutdownVM(nodeName, vmid, req);
     return { message: `VM ${vmid} shutdown successfully` };
   }
 }

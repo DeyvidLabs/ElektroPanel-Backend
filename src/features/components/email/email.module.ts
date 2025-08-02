@@ -11,18 +11,20 @@ import { BlacklistService } from './blacklist.service';
 import { HttpModule } from '@nestjs/axios';
 import { IpInfoService } from './ip-info.service';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LoggingModule } from '../../../logging/logging.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([EmailEvent, LogFileState, ConnectionEvent, MailUser]),
     ScheduleModule.forRoot(),
-    HttpModule
+    HttpModule,
+    LoggingModule
   ],
   providers: [
     EmailService,
     // LogParserService,
     BlacklistService,
-    IpInfoService
+    IpInfoService,
   ],
   controllers: [EmailController]
 })
