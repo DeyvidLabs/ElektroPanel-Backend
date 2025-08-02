@@ -1,9 +1,7 @@
 // src/mail/mail.service.ts
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
-import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import { CookieOptions } from 'express';
+import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import { User } from '../database/user.entity';
 @Injectable()
@@ -12,6 +10,8 @@ export class MailerService {
   private transporter: nodemailer.Transporter;
   private readonly emailSecret = process.env.EMAIL_TOKEN_SECRET || 'email_token_secret';
   private readonly emailTokenExpiration = '1h';
+  private readonly key = Buffer.from(process.env.AES_KEY!, 'hex');
+  private readonly iv = Buffer.from(process.env.AES_IV!, 'hex');
 
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -23,6 +23,7 @@ export class MailerService {
         pass: process.env.SMTP_PASS,
       },
     });
+
   }
 
   async sendMail(options: {
@@ -90,11 +91,28 @@ export class MailerService {
     }
   }
 
+  async encryptJWT(jwtToken: string) {
+      const cipher = crypto.createCipheriv('aes-256-ctr', this.key, this.iv);
+      const encrypted = Buffer.concat([
+          cipher.update(jwtToken, 'utf8'),
+          cipher.final()
+      ]);
+      return encrypted.toString('hex');
+  }
 
+  async decryptJWT(encryptedHex: string) {
+    const decipher = crypto.createDecipheriv('aes-256-ctr', this.key, this.iv);
+    const decrypted = Buffer.concat([
+        decipher.update(Buffer.from(encryptedHex, 'hex')),
+        decipher.final()
+    ]);
+    return decrypted.toString('utf8');
+  }
 
   async sendDeletionEmail(email: string, userId: string) {
     const token = await this.generateVerificationToken({ id: userId, email } as User);
-    const deleteUrl = `${process.env.BACKEND_URL}/auth/delete-account?token=${token}`;
+    const encrypted = await this.encryptJWT(token);
+    const deleteUrl = `${process.env.BACKEND_URL}/auth/delete-account?token=${encrypted}`;
 
     const html = `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #333;">
@@ -127,7 +145,8 @@ export class MailerService {
 
   async sendMailChange(email: string, userId: string, newEmail: string) {
     const token = await this.generateEmailToken({ id: userId, email: email } as User, newEmail);
-    const emailChangeUrl = `${process.env.BACKEND_URL}/auth/change-email?token=${token}`;
+    const encrypted = await this.encryptJWT(token);
+    const emailChangeUrl = `${process.env.BACKEND_URL}/auth/change-email?token=${encrypted}`;
 
     const html = `
       <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; color: #333;">

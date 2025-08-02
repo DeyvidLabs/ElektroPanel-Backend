@@ -126,7 +126,7 @@ export class AuthController {
         ipAddress: ip,
       });
     }
-  
+    await this.userService.updateUser(existingUser.id, { lastLogin: new Date() })
     return response.json({ success: true, message: 'Login successful.' });
     // return response.redirect(`${process.env.FRONTEND_URL || 'https://panel.deyvid.dev'}/dashboard`);
   }
@@ -229,7 +229,8 @@ export class AuthController {
         ipAddress: ip,
       });
     }
-  
+
+    await this.userService.updateUser(user.id, { lastLogin: new Date() })
     return response.redirect(`${process.env.FRONTEND_URL}/dashboard` || 'https://panel.deyvid.dev/error?message=Authentication with google was successful, but could not redirect' );
   }
 
@@ -265,7 +266,8 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid or expired deletion token' })
   async deleteByLink(@Query('token') token: string, @Res() res: Response) {
     try {
-      const payload = await this.mailerService.verifyToken(token);
+      const decrypted = await this.mailerService.decryptJWT(token);
+      const payload = await this.mailerService.verifyToken(decrypted);
 
       const user = await this.userService.getUserById(payload.userId);
       if (!user) {
@@ -273,10 +275,10 @@ export class AuthController {
       }
 
       // await this.userService.deleteUser(user.id); // Assumi che `deleteUser` accetti ID + password
-      await this.userService.updateUser(user.id, { enabled: false, deleted: true });
+      await this.userService.deleteUser(user.id);
       res.clearCookie('access_token');
       res.clearCookie('refresh_token');
-      return res.redirect(`${process.env.FRONTEND_URL}`);
+      return res.redirect(`${process.env.FRONTEND_URL}/?message=Account deleted`);
     } catch (err) {
       return res.redirect(`${process.env.FRONTEND_URL}/error?message=Invalid or expired deletion link`);
     }
@@ -287,7 +289,8 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid email or already in use' })
   @Get('change-email')
   async updateEmail(@Req() req: Request, @Query('token') token: string, @Res() res: Response) {
-    const payload = await this.mailerService.verfiyEmailtoken(token);
+    const decrypted = await this.mailerService.decryptJWT(token);
+    const payload = await this.mailerService.verfiyEmailtoken(decrypted);
     const user = await this.userService.getUserById(payload.userId);
     if (!user) {
       throw new BadRequestException('User not found');
