@@ -21,12 +21,14 @@ import { LogFileState } from './database/log-file-state.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConnectionEvent } from './database/connection.entity';
 import { MailUser } from './database/mail-user.entity';
+import { LoggingModule } from './logging/logging.module';
+import { SystemLog } from './database/systemlog.entity';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
       type: 'mysql',
       url: process.env.DATABASE_URL,
-      entities: [User, Permission, EmailEvent, LogFileState, ConnectionEvent, MailUser],
+      entities: [User, Permission, EmailEvent, LogFileState, ConnectionEvent, MailUser, SystemLog],
       // synchronize: process.env.NODE_ENV === "development",
       synchronize: true,
       logging: process.env.NODE_ENV === "development",
@@ -46,6 +48,7 @@ import { MailUser } from './database/mail-user.entity';
     ScheduleModule.forRoot(),
     ProxmoxModule,
     EmailModule,
+    LoggingModule,
   ],
   providers: [
     UserService,

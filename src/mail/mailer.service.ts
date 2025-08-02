@@ -126,7 +126,7 @@ export class MailerService {
   }
 
   async sendMailChange(email: string, userId: string, newEmail: string) {
-    const token = await this.generateEmailToken({ id: userId, email } as User, newEmail);
+    const token = await this.generateEmailToken({ id: userId, email: email } as User, newEmail);
     const emailChangeUrl = `${process.env.BACKEND_URL}/auth/change-email?token=${token}`;
 
     const html = `

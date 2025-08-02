@@ -10,6 +10,7 @@ import { PermissionService } from '../permission/permission.service';
 import { GoogleStrategy } from './google.strategy';
 import { MailerModule } from '../../mail/mailer.module';  // Import MailModule
 import { MailerService } from '../../mail/mailer.service';
+import { LoggingModule } from '../../logging/logging.module';
 
 @Module({
   imports: [
@@ -25,7 +26,8 @@ import { MailerService } from '../../mail/mailer.service';
       }),
     }),
     UserModule,
-    MailerModule,  // Ensure MailModule is imported here
+    MailerModule,
+    LoggingModule,
   ],
   providers: [
     AuthService,

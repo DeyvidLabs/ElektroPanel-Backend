@@ -10,6 +10,8 @@ import {
 import axios, { AxiosInstance } from 'axios';
 import * as https from 'https';
 import * as dotenv from 'dotenv';
+import { LoggingService } from '../../../logging/logging.service';
+import { Request } from 'express';
 dotenv.config();
 
 @Injectable()
@@ -19,7 +21,7 @@ export class ProxmoxService {
   private ticket: string = '';
   private csrfToken: string = '';
 
-  constructor() {
+  constructor(private loggingService: LoggingService) {
     const proxmoxHost = process.env.PROXMOX_HOST;
     const agent = new https.Agent({ rejectUnauthorized: false });
 
@@ -137,35 +139,88 @@ export class ProxmoxService {
     }
   }
 
-  async startVM(nodeName: string, vmid: number) {
+  async startVM(nodeName: string, vmid: number, req: Request) {
     await this.authenticate();
     try {
       await this.axiosInstance.post(`/api2/json/nodes/${nodeName}/qemu/${vmid}/status/start`);
       this.logger.log(`Started VM ${vmid} on node ${nodeName}`);
+
+      await this.loggingService.logAction(req, {
+        service: 'proxmox',
+        action: 'vm_started',
+        actor: {
+          type: 'user',
+        },
+        target: {
+          type: 'vm',
+          id: vmid.toString(),
+          name: nodeName
+        },
+        metadata: {
+          method: 'manual',
+        },
+      });
+
     } catch (error) {
       this.handleProxmoxError(error, `Starting VM ${vmid} on node "${nodeName}"`);
     }
   }
 
-  async stopVM(nodeName: string, vmid: number) {
+  async stopVM(nodeName: string, vmid: number, req: Request) {
     await this.authenticate();
     try {
       await this.axiosInstance.post(`/api2/json/nodes/${nodeName}/qemu/${vmid}/status/stop`);
       this.logger.log(`Stopped VM ${vmid} on node ${nodeName}`);
+
+      await this.loggingService.logAction(req, {
+        service: 'proxmox',
+        action: 'vm_stopped',
+        actor: {
+          type: 'user',
+        },
+        target: {
+          type: 'vm',
+          id: vmid.toString(),
+          name: nodeName
+        },
+        metadata: {
+          method: 'manual',
+        },
+      });
+
     } catch (error) {
       this.handleProxmoxError(error, `Stopping VM ${vmid} on node "${nodeName}"`);
     }
   }
 
-  async shutdownVM(nodeName: string, vmid: number) {
+  async shutdownVM(nodeName: string, vmid: number, req: Request,) {
     await this.authenticate();
     try {
       await this.axiosInstance.post(`/api2/json/nodes/${nodeName}/qemu/${vmid}/status/shutdown`);
       this.logger.log(`Shutdown VM ${vmid} on node ${nodeName}`);
+
+      await this.loggingService.logAction(req, {
+        service: 'proxmox',
+        action: 'vm_shutdown',
+        actor: {
+          type: 'user',
+
+        },
+        target: {
+          type: 'vm',
+          id: vmid.toString(),
+          name: nodeName
+        },
+        metadata: {
+          method: 'manual',
+        },
+      });
+
     } catch (error) {
       this.handleProxmoxError(error, `Shutting down VM ${vmid} on node "${nodeName}"`);
     }
   }
+
 
   async storageVM(nodeName: string, vmid: number) {
     await this.authenticate();

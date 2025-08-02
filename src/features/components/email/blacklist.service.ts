@@ -1,6 +1,7 @@
 // src/shared/ip-block.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { exec } from 'child_process';
+import { LoggingService } from '../../../logging/logging.service';
 import { promisify } from 'util';
 
 const execAsync = promisify(exec);

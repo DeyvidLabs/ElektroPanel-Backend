@@ -45,7 +45,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly authService: AuthService,
-    private readonly mailerService: MailerService,
+    private readonly mailerService: MailerService,  
   ) {}
 
   private getUserFromRequest(req: Request): UserResponseDTO {
@@ -114,7 +114,7 @@ export class UserController {
   @Permissions('user')
   async updateDisplayName(@Req() req: Request, @Body() dto: UpdateDisplayNameDTO) {
     const user = this.getUserFromRequest(req);
-    await this.userService.updateUser(user.id, { name: dto.displayName });
+    await this.userService.updateDisplayName(user.id, dto.displayName, req);
     return { message: 'Display name updated' };
   }
 
@@ -125,7 +125,7 @@ export class UserController {
   @Permissions('user')
   async updatePassword(@Req() req: Request, @Body() dto: UpdatePasswordDTO) {
     const user = this.getUserFromRequest(req);
-    await this.userService.updatePassword(user.id, dto.currentPassword, dto.newPassword);
+    await this.userService.updatePassword(user.id, dto.currentPassword, dto.newPassword, req);
     return { message: 'Password updated' };
   }
 
@@ -227,7 +227,7 @@ export class UserController {
   @Permissions('user')
   async requestEmailChange(@Body() body: UpdateEmailDTO, @Req() req, @Res() res: Response) {
     const user = this.getUserFromRequest(req);
-
+    
     const existing = await this.userService.getUserByEmail(body.newEmail);
     if (existing) {
       throw new BadRequestException('Email already in use');
@@ -236,7 +236,7 @@ export class UserController {
     const storedUser = await this.userService.getUserById(user.id);
     if (!storedUser) throw new UnauthorizedException('User not found.');
 
-    await this.mailerService.sendMailChange(user.email, user.id, body.newEmail);
+    await this.mailerService.sendMailChange(storedUser.email, user.id, body.newEmail);
 
     return res.json({ message: 'Email change request sent. Please verify the new email.' });
   }
@@ -247,7 +247,7 @@ export class UserController {
   @Delete('delete')
   @Permissions('admin')
   async deleteByAdmin(@Body() body: AdminDeleteAccountDTO, @Req() req, @Res() res: Response) {
-    this.getUserFromRequest(req);
+    const user = this.getUserFromRequest(req);
 
     const existing = await this.userService.getUserByEmail(body.email);
     if (!existing) {
@@ -256,7 +256,7 @@ export class UserController {
 
     const name = existing.name;
     const email = existing.email;
-
+    
     await this.userService.adminDeleteUser(existing.id);
     return res.json({ success: true, message: `The user ${name} with email ${email} was deleted` });
   }

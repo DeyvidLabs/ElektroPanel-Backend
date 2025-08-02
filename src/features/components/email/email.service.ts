@@ -1,5 +1,5 @@
 // src/services/mail.service.ts
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import {
@@ -10,6 +10,9 @@ import {
 import { EmailEvent } from '../../../database/email-event.entity';
 import { ConnectionEvent } from '../../../database/connection.entity';
 import { MailUser } from '../../../database/mail-user.entity';
+import { UserLoggingDTO } from '../../../shared/dto/user.dto';
+import { LoggingService } from '../../../logging/logging.service';
+import { Request } from 'express';
 
 export interface IEmailHistory {
   daily: { date: Date; in: number; out: number }[];
@@ -47,6 +50,7 @@ export class EmailService {
     private readonly connectionEventRepo: Repository<ConnectionEvent>,
     @InjectRepository(MailUser)
     private readonly mailRepo: Repository<MailUser>,
+    private readonly loggingService: LoggingService
   ) { }
 
   async getEmailHistory(): Promise<IEmailHistory> {
@@ -113,43 +117,58 @@ export class EmailService {
   }
 
 
-async getMaliciousIPs(limit = 100): Promise<IBlacklistIPInfo[]> {
-  const result = await this.connectionEventRepo
-    .createQueryBuilder('connection')
-    .select([
-      'connection.ipAddress AS address',
-      'connection.blacklisted AS blacklisted',
-      'connection.isp AS isp',
-      'connection.org AS org',
-      'connection.country AS country',
-      'SUM(connection.amount) AS count',
-      'MAX(connection.lastTimestamp) AS lastSeen'
-    ])
-    .groupBy('connection.ipAddress, connection.blacklisted, connection.isp, connection.org, connection.country')
-    .orderBy('count', 'DESC')
-    .limit(limit)
-    .getRawMany();
+  async getMaliciousIPs(limit = 100): Promise<IBlacklistIPInfo[]> {
+    const result = await this.connectionEventRepo
+      .createQueryBuilder('connection')
+      .select([
+        'connection.ipAddress AS address',
+        'connection.blacklisted AS blacklisted',
+        'connection.isp AS isp',
+        'connection.org AS org',
+        'connection.country AS country',
+        'SUM(connection.amount) AS count',
+        'MAX(connection.lastTimestamp) AS lastSeen'
+      ])
+      .groupBy('connection.ipAddress, connection.blacklisted, connection.isp, connection.org, connection.country')
+      .orderBy('count', 'DESC')
+      .limit(limit)
+      .getRawMany();
 
-  return result.map(row => ({
-    address: row.address,
-    count: parseInt(row.count, 10),
-    lastSeen: new Date(row.lastSeen),
-    blacklisted: row.blacklisted,
-    info: {
-      isp: row.isp || 'Unknown',
-      org: row.org || 'Unknown',
-      country: row.country || 'Unknown'
-    }
-  }));
-}
+    return result.map(row => ({
+      address: row.address,
+      count: parseInt(row.count, 10),
+      lastSeen: new Date(row.lastSeen),
+      blacklisted: row.blacklisted,
+      info: {
+        isp: row.isp || 'Unknown',
+        org: row.org || 'Unknown',
+        country: row.country || 'Unknown'
+      }
+    }));
+  }
 
-  async toggleIPAddressBlacklist(ipAddress: string, status: boolean): Promise<void> {
+  async toggleIPAddressBlacklist(ipAddress: string, status: boolean, req: Request): Promise<void> {
     const ipAddressDatabase = await this.connectionEventRepo.findOne({ where: { ipAddress } });
     if( !ipAddressDatabase ) {
       throw new Error('IP address not found');
     }
     ipAddressDatabase.blacklisted = status;
     await this.connectionEventRepo.save(ipAddressDatabase);
+    await this.loggingService.logAction(req, {
+      service: 'email',
+      action: status ? 'ip_blacklisted' : 'ip_unblacklisted',
+      actor: {
+        type: 'user',
+      },
+      target: {
+        type: 'IP',
+        id: ipAddress,
+        name: ipAddress,
+      },
+      metadata: {
+        status: status ? 'blacklisted' : 'unblacklisted',
+      },
+    });
   }
   
 
