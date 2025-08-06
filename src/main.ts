@@ -4,7 +4,8 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { ValidationPipe } from '@nestjs/common';
+import { IoAdapter } from '@nestjs/platform-socket.io';
+
 const cookieParser = require('cookie-parser');
 async function bootstrap() {
   const adapter = new ExpressAdapter();
@@ -35,6 +36,8 @@ async function bootstrap() {
     credentials: true,                 // If you're sending cookies/auth
   });
   app.use(cookieParser());
+  app.useWebSocketAdapter(new IoAdapter(app));
+
   await app.listen(port);
   console.log(`Server running on port ${port}`);
 }
