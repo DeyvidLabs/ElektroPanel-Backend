@@ -14,7 +14,8 @@ import { LoggingModule } from '../../logging/logging.module';
   imports: [
     TypeOrmModule.forFeature([User, Permission]),
     MailerModule,
-    LoggingModule
+    forwardRef(() => LoggingModule) // 👈 aggiungi questo
+
   ],
   controllers: [UserController],
   providers: [

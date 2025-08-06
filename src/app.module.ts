@@ -23,6 +23,7 @@ import { ConnectionEvent } from './database/connection.entity';
 import { MailUser } from './database/mail-user.entity';
 import { LoggingModule } from './logging/logging.module';
 import { SystemLog } from './database/systemlog.entity';
+import { TorrentsModule } from './features/components/torrents/torrents.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -49,6 +50,7 @@ import { SystemLog } from './database/systemlog.entity';
     ProxmoxModule,
     EmailModule,
     LoggingModule,
+    TorrentsModule,
   ],
   providers: [
     UserService,

@@ -11,7 +11,7 @@ import { UserModule } from '../features/user/user.module';
     forwardRef(() => UserModule),
   ],
   providers: [
-    LoggingService
+    LoggingService,
   ],
   exports: [LoggingService],
   controllers: [LoggingController],
