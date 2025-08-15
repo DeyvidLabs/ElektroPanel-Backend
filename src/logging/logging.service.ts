@@ -18,10 +18,7 @@ export class LoggingService {
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly jwtService: JwtService
-  ) {
-      console.log('logRepo', this.logRepo); // dovrebbe mostrare Repository{} e non undefined
-
-  }
+  ) {}
 
     // Decode the token without verifying (to get user info)
   decodeToken<T = any>(token: string): T {

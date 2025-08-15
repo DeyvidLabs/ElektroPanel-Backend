@@ -15,7 +15,7 @@ export class TorrentsService implements OnModuleInit {
 
   
   async onModuleInit() {
-    await this.syncMissingAddedLogs(); // ora logRepo sarà inizializzato
+    await this.syncMissingAddedLogs();
   }
 
   /**
