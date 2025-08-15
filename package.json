@@ -65,7 +65,7 @@
     "@types/chokidar": "^2.1.7",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.16.4",
+    "@types/node": "^22.17.2",
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",

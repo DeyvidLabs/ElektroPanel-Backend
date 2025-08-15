@@ -2,7 +2,7 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, MessageBody, Conne
 import { Server, Socket } from 'socket.io';
 import { TorrentsService } from './torrents.service';
 import { TorrentDTO } from '../../../shared/dto/torrent.dto';
-import { LoggingService } from 'src/logging/logging.service';
+import { LoggingService } from '../../../logging/logging.service';
 
 @WebSocketGateway({
   path: '/socket.io',

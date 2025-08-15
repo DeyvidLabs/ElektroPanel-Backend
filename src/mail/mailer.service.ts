@@ -23,7 +23,13 @@ export class MailerService {
         pass: process.env.SMTP_PASS,
       },
     });
-
+    console.log('MailerService initialized with SMTP settings:', {
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_SECURE,
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    });
   }
 
   async sendMail(options: {
