@@ -27,7 +27,14 @@ export class ProxmoxController {
   @ApiResponse({ status: 404, description: 'Node not found' })
   @Get('nodes/:nodeName')
   async getNode(@Param('nodeName') nodeName: string) {
-    return await this.proxmoxService.getNodeInfo(nodeName);
+    const nodeInfo = await this.proxmoxService.getNodeInfo(nodeName);
+
+    const fullNodeInfo = {
+      ...nodeInfo,
+      status: "online"
+    };
+
+    return fullNodeInfo;
   }
 
   @Permissions(['proxmox_read'])
